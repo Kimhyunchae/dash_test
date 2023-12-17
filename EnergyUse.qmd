@@ -1,5 +1,5 @@
 ---
-title: "에너지사용량 자료 분석"
+title: "에너지사용량(지리정보시각화)"
 author: "김현채"
 format: dashboard
 execute: 
@@ -101,37 +101,41 @@ fig.show(config={'scrollZoom': False})
 ## (2) (서울+김포)특별시? - 25점
 
 ```{python}
-# 서울시와 김포시의 에너지 사용량 계산
+
+# 전기, 도시가스, 지역난방의 에너지 사용량 합계 계산하여 '에너지사용량합계' 열 생성
+df2['에너지사용량합계'] = df2['에너지사용량(TOE)/전기'] + df2['에너지사용량(TOE)/도시가스'] + df2['에너지사용량(TOE)/지역난방']
+
+#서울시와 김포시의 에너지 사용량 계산
 seoul_energy = df2[df2['시도'] == '서울특별시'].groupby('년도')['에너지사용량합계'].sum()
 kimpo_energy = df2[df2['지역'] == '김포시'].groupby('년도')['에너지사용량합계'].sum()
 
-# 년도별 에너지 사용량 합계 계산
+#년도별 에너지 사용량 합계 계산
 total_energy = seoul_energy.add(kimpo_energy, fill_value=0)
 
-# 각 구별 에너지 사용 비율 계산
-df2['구별사용비율'] = df2.apply(lambda row: row['에너지사용량합계'] / total_energy.loc[row['년도']], axis=1)
+#각 구별 에너지 사용 비율 계산
+df2['에너지사용비율'] = df2.apply(lambda row: row['에너지사용량합계'] / total_energy.loc[row['년도']], axis=1)
 
-# 서울+김포 특별시 지리 정보 선택
+#서울+김포 특별시 지리 정보 선택
 seoul_kimpo_dict = local_dict.copy()
 seoul_kimpo_dict['features'] = [l for l in seoul_kimpo_dict['features'] if l['properties']['code'][:2] == '11' or (l['properties']['code'][:2] == '31' and l['properties']['name'] == '김포시')]
 
-# 시각화
+#시각화
 fig = px.choropleth_mapbox(
-    geojson=seoul_kimpo_dict,
-    featureidkey='properties.code',
-    data_frame=df2[(df2['시도'] == '서울특별시') | ((df2['시도'] == '경기도') & (df2['지역'] == '김포시'))],
-    locations='code_local',
-    color='구별사용비율',
-    animation_frame='년도',
-    hover_data=['시도', '지역'],
-    opacity=0.5,
-    #---#
-    mapbox_style="carto-positron",
-    range_color=[df2['구별사용비율'].min(), df2['구별사용비율'].max()],
-    center={"lat": 37.5612, "lon": 126.8228},
-    zoom=9,
-    height=800,
-    width=750,
+geojson=seoul_kimpo_dict,
+featureidkey='properties.code',
+data_frame=df2[(df2['시도'] == '서울특별시') | ((df2['시도'] == '경기도') & (df2['지역'] == '김포시'))],
+locations='code_local',
+color='에너지사용비율',
+animation_frame='년도',
+hover_data=['시도', '지역'],
+opacity=0.5,
+#---#
+mapbox_style="carto-positron",
+range_color=[df2['에너지사용비율'].min(), df2['에너지사용비율'].max()],
+center={"lat": 37.5612, "lon": 126.8228},
+zoom=9,
+height=800,
+width=750,
 )
 fig.show(config={'scrollZoom': False})
 
