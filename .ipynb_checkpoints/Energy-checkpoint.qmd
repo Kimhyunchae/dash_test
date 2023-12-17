@@ -1,5 +1,5 @@
 ---
-title: "에너지사용량 자료 분석"
+title: "에너지사용량(지리정보시각화)"
 author: "김현채"
 format: dashboard
 execute: 
